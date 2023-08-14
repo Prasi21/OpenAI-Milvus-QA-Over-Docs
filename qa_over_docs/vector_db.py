@@ -4,6 +4,7 @@ from langchain.docstore.document import Document
 from langchain.vectorstores.milvus import Milvus
 from pymilvus import connections, Collection, FieldSchema, CollectionSchema, DataType, utility
 import validators, os
+import re
 from qa_over_docs import r_db, api, relational_db
 
 print("retrieving Embeddings model")
@@ -115,8 +116,10 @@ def create_questions_collection():
     questions_vector_store = Milvus(embeddings, QUESTIONS_STORE_NAME)
 
 
-def add_sources(sources: list[str]):
+def add_sources(sources: list[str], partition_name: str = None):
     print(f"Adding sources to {DOCUMENTS_STORE_NAME} collection")
+    if (partition_name):
+        print(f"Adding to partition {partition_name}")
 
     loaders = []
 
@@ -157,7 +160,8 @@ def add_sources(sources: list[str]):
         text_splitter = RecursiveCharacterTextSplitter()
         documents = text_splitter.split_documents(docs)
         ids = sources_vector_store.add_documents(documents)
-        print(f"Successfully added sources to {DOCUMENTS_STORE_NAME} collection")
+        ids = sources_vector_store.add_documents(documents, partition_name=partition_name)
+        print(f"Successfully added sources to {DOCUMENTS_STORE_NAME} collection, in partition {partition_name}")
 
         for id in ids:
             source = relational_db.Source(vector_id=id)
@@ -165,6 +169,28 @@ def add_sources(sources: list[str]):
         r_db.session.commit()
         print(f"Successfully added sources to relational database")
 
+def partition_exists(partition: str):
+    collection = Collection(DOCUMENTS_STORE_NAME)
+    return collection.has_partition(partition)
+
+def create_partition(partition: str):
+    if not valid_partition_name(partition):
+        return False
+    if not partition_exists(partition): 
+        print(f"Creating new partition {partition}")
+        collection = Collection(DOCUMENTS_STORE_NAME)
+        collection.create_partition(partition)
+    else:
+        print(f"partition {partition} already exists")
+    return True
+
+def retrieve_all_partition_names():
+    collection = Collection(DOCUMENTS_STORE_NAME)
+    partition_list = collection.partitions
+    return [item.name for item in partition_list]
+
+def valid_partition_name(partition):
+    return partition and re.match("^[A-Za-z0-9_-]*$", partition)
 
 def add_question(id: str, text: str):
     embedded_question = embeddings.embed_query(text)
@@ -179,7 +205,7 @@ def add_question(id: str, text: str):
     collection.insert(data)
 
 
-def retrieve_relevant_docs(query: str) -> list[dict]:
+def retrieve_relevant_docs(query: str, partition_names: list[str]=None) -> list[dict]:
     embedded_query = embeddings.embed_query(query)
     collection = Collection(DOCUMENTS_STORE_NAME)
 
@@ -187,7 +213,8 @@ def retrieve_relevant_docs(query: str) -> list[dict]:
         "metric_type": "L2",  # Similarity metric to use, e.g., "L2" or "IP"
         "params": {"nprobe": 16}  # Extra search parameters, e.g., number of probes
     }
-    results = collection.search(data=[embedded_query], anns_field="vector", limit=20, param=search_param)
+    #TODO Cannot search on an empty partition
+    results = collection.search(data=[embedded_query], anns_field="vector", limit=20, param=search_param, partition_names=partition_names)
     results = results[0]
 
     relevant_docs = collection.query(

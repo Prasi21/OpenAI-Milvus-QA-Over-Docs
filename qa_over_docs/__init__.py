@@ -36,13 +36,17 @@ else:
         "collection_exists": False,
         "sources_to_add": [],
         "sources": [],
-        "processing_sources": False
+        "processing_sources": False,
+        "current_partition": "_default",
+        "partitions": ["_default"]
+
     }
 
 if os.path.exists(SOURCES_FILE):
     with open(SOURCES_FILE) as sources_file:
         # print(list(map(lambda e: e.strip(), sources_file.readlines())))
-        context["sources"] = list(map(lambda e: e.strip(), sources_file.readlines()))
+        # context["sources"] = list(map(lambda e: e.strip(), sources_file.readlines()))
+        context["sources"] = json.load(sources_file)
         context["collection_exists"] = True
 
 def save_context():
@@ -53,7 +57,7 @@ def save_context():
         new_context["waiting"] = False
         json.dump(new_context, file, indent=4)
     with open(SOURCES_FILE, 'w' if os.path.exists(SOURCES_FILE) else 'x') as file:
-        file.write("\n".join(context["sources"]))
+        file.write(json.dumps(context["sources"]))
 
 
 from qa_over_docs.apis.base import BaseAPI

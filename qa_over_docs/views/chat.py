@@ -149,7 +149,8 @@ def retrieve_relevant_response(answer_message: message.Answer, user_input: str, 
 def generate_answer(answer_message: message.Answer, user_input: str, previous_response: relational_db.Response) -> message.Answer:
     answer_message.comment = "new"
 
-    relevant_docs = vector_db.retrieve_relevant_docs(user_input)
+    partition_list = [context["current_partition"]]
+    relevant_docs = vector_db.retrieve_relevant_docs(user_input, partition_list)
     response = api.retrieve_response(user_input, relevant_docs)
 
     answer_message.message = response["answer"]

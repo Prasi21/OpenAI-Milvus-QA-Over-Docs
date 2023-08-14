@@ -40,6 +40,17 @@ def include_source():
 
     return redirect("/")
 
+@app.route("/process_partition", methods=['GET', 'POST'])
+def process_partition():
+    if request.method == 'POST':
+        new_partition = request.form['partition-name']
+        valid = vector_db.create_partition(new_partition)
+        partition_list = vector_db.retrieve_all_partition_names()
+        if valid:
+            context["current_partition"] = new_partition
+            context["partitions"] = partition_list
+
+    return redirect("/")
 
 @app.route("/clear_sources_to_add")
 def clear_sources_to_add():
@@ -59,8 +70,10 @@ def add_sources():
                 if validators.url(source) or os.path.exists(os.path.join(UPLOAD_FOLDER, source)):
                     valid_sources.append(source)
             if valid_sources:
-                vector_db.add_sources(valid_sources)
-                context["sources"].extend(valid_sources)
+                partition = context["current_partition"]
+                vector_db.add_sources(valid_sources, partition_name=partition)
+                tagged_sources = [{"source": source, "partition": partition} for source in valid_sources]
+                context["sources"].extend(tagged_sources)
                 clear_sources_to_add()
                 flash("Successfully added sources", "success")
             else:
@@ -96,6 +109,9 @@ def delete_collection():
     context["sources"] = []
     context["time_intervals"] = {}
     context["chat_items"] = []
+    context["current_partition"] = "_default"
+    context["partitions"] = ["_default"]
+
 
     flash("Databases successfully deleted", "primary")
     return redirect("/")
