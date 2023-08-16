@@ -40,8 +40,8 @@ def include_source():
 
     return redirect("/")
 
-@app.route("/process_partition", methods=['GET', 'POST'])
-def process_partition():
+@app.route("/create_partition", methods=['GET', 'POST'])
+def create_partition():
     if request.method == 'POST':
         new_partition = request.form['partition-name']
         valid = vector_db.create_partition(new_partition)
@@ -51,6 +51,16 @@ def process_partition():
             context["partitions"] = partition_list
 
     return redirect("/")
+
+@app.route("/update_partitions", methods=['POST'])
+def update_partitions():
+    selected_partitions = request.get_json()
+    # selected_partitions = request.form.getlist('partitions')
+    print(selected_partitions)
+    context["search_partitions"] = selected_partitions
+    return redirect("/")
+
+
 
 @app.route("/clear_sources_to_add")
 def clear_sources_to_add():
@@ -111,6 +121,7 @@ def delete_collection():
     context["chat_items"] = []
     context["current_partition"] = "_default"
     context["partitions"] = ["_default"]
+    context["search_partitions"] = ["_default"]
 
 
     flash("Databases successfully deleted", "primary")

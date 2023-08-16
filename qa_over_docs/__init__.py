@@ -38,8 +38,8 @@ else:
         "sources": [],
         "processing_sources": False,
         "current_partition": "_default",
-        "partitions": ["_default"]
-
+        "partitions": ["_default"],
+        "search_partitions": ["_default"]
     }
 
 if os.path.exists(SOURCES_FILE):

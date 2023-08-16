@@ -8,16 +8,28 @@
         <button type="submit" class="btn btn-secondary mt-3" id="include-source" disabled>Include Source</button>
     </form>
 
-    <form action="/process_partition" method="post" class="d-flex flex-column">
+    <form action="/create_partition" method="post" class="d-flex flex-column">
         <h4 class="mt-3">Partitions</h4>
         <h5 class="mt-3">Current Partition: {{ current_partition }} </h5>
         <input type="text" class="form-control mt-3" id="partition-name" name="partition-name" placeholder="Partition Name" autocomplete="off">
-        <ul>
-            {% for name in partitions %}
-            <li>{{ name }}</li>
-            {% endfor %}
-        </ul>
     </form>
+
+    <div>
+        {% for name in partitions %}
+        <label>
+            <input type="checkbox" id="{{ name }}" name="partitions" value="{{ name }}"> {{  name  }}
+        </label><br>
+        {% endfor %}
+    </div>
+    <script id="partitionNames" type="application/json">{{ partitions|tojson }}</script>
+    <script>
+        console.log("YOYOYOYO");
+        // scr="C:/Users/prasi/Documents/RemChat/Prasi_Docs_QA/OpenAI-Milvus-QA-Over-Docs/qa_over_docs/static/select_partition.js"
+    </script>
+        
+    <!-- <form action="/set_search_partition" method="post" class="d-flex flex-column">
+        <input type="submit" value="Set Partitions" class="btn btn-secondary mt-3">
+    </form> -->
     
     <h4 class="mt-3">Sources to Add</h4>
 
